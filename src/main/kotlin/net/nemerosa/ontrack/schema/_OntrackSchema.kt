@@ -14,7 +14,12 @@ import org.springframework.stereotype.Component
 class TypeBranch
     : TypeDef<Branch> {
     override val type: Type<Branch>
-        get() = objectType { }
+        get() = objectType {
+            fieldInt("id", "Branch ID", Branch::id)
+            fieldString("name", "Branch name", Branch::name)
+            // TODO fieldString(Branch::description)
+            // TODO fieldBoolean(Branch::disabled)
+        }
 }
 
 /**
