@@ -17,11 +17,13 @@ interface Field<C : Any, F> {
                 .description(description)
                 .type(bindingType)
                 // TODO Deprecation
-                // TODO Argument
+                // Argument
+                .argument(bindingArguments)
                 // Data fetcher
                 .dataFetcher(bindingGetter)
                 .build()
     val bindingType: GraphQLOutputType
+    val bindingArguments: List<GraphQLArgument>
     val bindingGetter: (DataFetchingEnvironment) -> Any?
 }
 
@@ -34,6 +36,9 @@ abstract class AbstractField<C : Any, F>(
         get() = {
             bindingGet(it, containerClass.cast(it.source))
         }
+
+    override val bindingArguments: List<GraphQLArgument>
+        get() = listOf()
 
     abstract fun bindingGet(environment: DataFetchingEnvironment, container: C): Any?
 }
@@ -92,14 +97,21 @@ class ListWithArgumentField<C : Any, F : Any, A : Any>(
         private val type: TypeReference<F>,
         name: String,
         description: String? = null,
-        argument: Argument<A>,
+        private val argument: Argument<A>,
         private val getter: (C, A) -> List<F>
 ) : AbstractField<C, F>(containerClass, name, description) {
     override val bindingType: GraphQLOutputType
         get() = GraphQLNonNull(GraphQLList(GraphQLNonNull(GraphQLTypeReference(type.typeName))))
 
-    override fun bindingGet(environment: DataFetchingEnvironment, container: C) =
-            TODO("Extract the arguments from the environment")
+    override val bindingArguments: List<GraphQLArgument>
+        get() = argument.bindingArguments
+
+    override fun bindingGet(environment: DataFetchingEnvironment, container: C): List<F> {
+        // Gets the argument from the environment
+        val argumentValue: A = argument.bindFrom(environment)
+        // Call
+        return getter(container, argumentValue)
+    }
 }
 
 /**
@@ -188,7 +200,8 @@ interface RootQueryDef<F> {
  */
 
 interface Argument<A> {
-
+    val bindingArguments: List<GraphQLArgument>
+    fun bindFrom(environment: DataFetchingEnvironment): A
 }
 
 /**
