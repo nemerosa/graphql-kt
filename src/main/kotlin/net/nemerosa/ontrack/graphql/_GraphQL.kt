@@ -3,6 +3,7 @@ package net.nemerosa.ontrack.graphql
 import graphql.Scalars
 import graphql.schema.*
 import kotlin.reflect.KClass
+import kotlin.reflect.full.cast
 
 /**
  * Field
@@ -17,33 +18,48 @@ interface Field<C : Any, F> {
                 .type(bindingType)
                 // TODO Deprecation
                 // TODO Argument
-                // TODO Data fetcher
+                // Data fetcher
+                .dataFetcher(bindingGetter)
                 .build()
     val bindingType: GraphQLOutputType
+    val bindingGetter: (DataFetchingEnvironment) -> Any?
 }
 
 abstract class AbstractField<C : Any, F>(
+        private val containerClass: KClass<C>,
         override val name: String,
         override val description: String? = null)
-    : Field<C, F>
+    : Field<C, F> {
+    override val bindingGetter: (DataFetchingEnvironment) -> Any?
+        get() = {
+            bindingGet(it, containerClass.cast(it.source))
+        }
+
+    abstract fun bindingGet(environment: DataFetchingEnvironment, container: C): Any?
+}
 
 abstract class ScalarField<C : Any, F>(
+        containerClass: KClass<C>,
         name: String,
         description: String? = null,
         private val getter: C.() -> F
-) : AbstractField<C, F>(name, description)
+) : AbstractField<C, F>(containerClass, name, description)
 
 /**
  * Object field
  */
 class ObjectField<C : Any, F : Any>(
+        private val containerClass: KClass<C>,
         private val type: TypeReference<F>,
         name: String,
         description: String? = null,
         private val getter: C.() -> F
-) : AbstractField<C, F>(name, description) {
+) : AbstractField<C, F>(containerClass, name, description) {
     override val bindingType: GraphQLOutputType
         get() = GraphQLNonNull(GraphQLTypeReference(type.typeName))
+
+    override fun bindingGet(environment: DataFetchingEnvironment, container: C) =
+            container.getter()
 }
 
 /**
@@ -51,13 +67,17 @@ class ObjectField<C : Any, F : Any>(
  */
 
 class ListField<C : Any, F : Any>(
+        private val containerClass: KClass<C>,
         private val type: TypeReference<F>,
         name: String,
         description: String? = null,
         private val getter: C.() -> List<F>
-) : AbstractField<C, F>(name, description) {
+) : AbstractField<C, F>(containerClass, name, description) {
     override val bindingType: GraphQLOutputType
         get() = GraphQLNonNull(GraphQLList(GraphQLNonNull(GraphQLTypeReference(type.typeName))))
+
+    override fun bindingGet(environment: DataFetchingEnvironment, container: C) =
+            container.getter()
 }
 
 /**
@@ -65,14 +85,18 @@ class ListField<C : Any, F : Any>(
  */
 
 class ListWithArgumentField<C : Any, F : Any, A : Any>(
+        private val containerClass: KClass<C>,
         private val type: TypeReference<F>,
         name: String,
         description: String? = null,
         argumentClass: KClass<A>,
         private val getter: (C, A) -> List<F>
-) : AbstractField<C, F>(name, description) {
+) : AbstractField<C, F>(containerClass, name, description) {
     override val bindingType: GraphQLOutputType
         get() = GraphQLNonNull(GraphQLList(GraphQLNonNull(GraphQLTypeReference(type.typeName))))
+
+    override fun bindingGet(environment: DataFetchingEnvironment, container: C) =
+            TODO("Extract the arguments from the environment")
 }
 
 /**
@@ -80,12 +104,15 @@ class ListWithArgumentField<C : Any, F : Any, A : Any>(
  */
 
 class IntField<C : Any>(
+        private val containerClass: KClass<C>,
         name: String,
         description: String? = null,
-        getter: C.() -> Int
-) : ScalarField<C, Int>(name, description, getter) {
+        private val getter: C.() -> Int
+) : ScalarField<C, Int>(containerClass, name, description, getter) {
     override val bindingType: GraphQLOutputType
         get() = GraphQLNonNull(Scalars.GraphQLInt)
+
+    override fun bindingGet(environment: DataFetchingEnvironment, container: C) = container.getter()
 }
 
 /**
@@ -93,22 +120,28 @@ class IntField<C : Any>(
  */
 
 class StringField<C : Any>(
+        private val containerClass: KClass<C>,
         name: String,
         description: String? = null,
-        getter: C.() -> String
-) : ScalarField<C, String>(name, description, getter) {
+        private val getter: C.() -> String
+) : ScalarField<C, String>(containerClass, name, description, getter) {
     override val bindingType: GraphQLOutputType
         get() = GraphQLNonNull(Scalars.GraphQLString)
+
+    override fun bindingGet(environment: DataFetchingEnvironment, container: C) = container.getter()
 }
 
 
 class NullableStringField<C : Any>(
+        private val containerClass: KClass<C>,
         name: String,
         description: String? = null,
-        getter: C.() -> String?
-) : ScalarField<C, String?>(name, description, getter) {
+        private val getter: C.() -> String?
+) : ScalarField<C, String?>(containerClass, name, description, getter) {
     override val bindingType: GraphQLOutputType
         get() = Scalars.GraphQLString
+
+    override fun bindingGet(environment: DataFetchingEnvironment, container: C) = container.getter()
 }
 
 
@@ -181,7 +214,7 @@ inline fun <reified C : Any> objectType(init: TypeBuilder<C>.() -> Unit): Type<C
  * Field definitions in builders
  */
 
-fun <C : Any> TypeBuilder<C>.fieldInt(name: String, description: String?, getter: C.() -> Int) {
+inline fun <reified C : Any> TypeBuilder<C>.fieldInt(name: String, description: String?, noinline getter: C.() -> Int) {
     field(
             createFieldInt(
                     name,
@@ -191,7 +224,7 @@ fun <C : Any> TypeBuilder<C>.fieldInt(name: String, description: String?, getter
     )
 }
 
-fun <C : Any> TypeBuilder<C>.fieldString(name: String, description: String?, getter: C.() -> String) {
+inline fun <reified C : Any> TypeBuilder<C>.fieldString(name: String, description: String?, noinline getter: C.() -> String) {
     field(
             createFieldString(
                     name,
@@ -201,7 +234,7 @@ fun <C : Any> TypeBuilder<C>.fieldString(name: String, description: String?, get
     )
 }
 
-fun <C : Any> TypeBuilder<C>.fieldNullableString(name: String, description: String?, getter: C.() -> String?) {
+inline fun <reified C : Any> TypeBuilder<C>.fieldNullableString(name: String, description: String?, noinline getter: C.() -> String?) {
     field(
             createFieldNullableString(
                     name,
@@ -211,7 +244,7 @@ fun <C : Any> TypeBuilder<C>.fieldNullableString(name: String, description: Stri
     )
 }
 
-fun <C : Any, F : Any> TypeBuilder<C>.fieldOf(type: TypeReference<F>, name: String, description: String?, getter: C.() -> F) {
+inline fun <reified C : Any, F : Any> TypeBuilder<C>.fieldOf(type: TypeReference<F>, name: String, description: String?, noinline getter: C.() -> F) {
     field(
             createFieldOf(
                     type,
@@ -222,7 +255,7 @@ fun <C : Any, F : Any> TypeBuilder<C>.fieldOf(type: TypeReference<F>, name: Stri
     )
 }
 
-inline fun <C : Any, reified F : Any> TypeBuilder<C>.fieldOf(name: String, description: String?, noinline getter: C.() -> F) {
+inline fun <reified C : Any, reified F : Any> TypeBuilder<C>.fieldOf(name: String, description: String?, noinline getter: C.() -> F) {
     fieldOf(
             typeRef<F>(),
             name,
@@ -231,7 +264,7 @@ inline fun <C : Any, reified F : Any> TypeBuilder<C>.fieldOf(name: String, descr
     )
 }
 
-inline fun <C : Any, reified F : Any> TypeBuilder<C>.listOf(name: String, description: String?, noinline getter: C.() -> List<F>) {
+inline fun <reified C : Any, reified F : Any> TypeBuilder<C>.listOf(name: String, description: String?, noinline getter: C.() -> List<F>) {
     field(
             createListOf(
                     name,
@@ -241,7 +274,7 @@ inline fun <C : Any, reified F : Any> TypeBuilder<C>.listOf(name: String, descri
     )
 }
 
-inline fun <C : Any, reified F : Any, A : Any> TypeBuilder<C>.listOf(name: String, description: String?, argumentClass: KClass<A>, noinline getter: (C, A) -> List<F>) {
+inline fun <reified C : Any, reified F : Any, A : Any> TypeBuilder<C>.listOf(name: String, description: String?, argumentClass: KClass<A>, noinline getter: (C, A) -> List<F>) {
     field(
             createListOf(
                     name,
@@ -256,36 +289,40 @@ inline fun <C : Any, reified F : Any, A : Any> TypeBuilder<C>.listOf(name: Strin
  * Field definitions
  */
 
-fun <C : Any> createFieldInt(name: String, description: String?, getter: C.() -> Int) =
+inline fun <reified C : Any> createFieldInt(name: String, description: String?, noinline getter: C.() -> Int) =
         IntField<C>(
+                C::class,
                 name,
                 description,
                 getter
         )
 
-fun <C : Any> createFieldString(name: String, description: String?, getter: C.() -> String) =
+inline fun <reified C : Any> createFieldString(name: String, description: String?, noinline getter: C.() -> String) =
         StringField<C>(
+                C::class,
                 name,
                 description,
                 getter
         )
 
-fun <C : Any> createFieldNullableString(name: String, description: String?, getter: C.() -> String?) =
+inline fun <reified C : Any> createFieldNullableString(name: String, description: String?, noinline getter: C.() -> String?) =
         NullableStringField<C>(
+                C::class,
                 name,
                 description,
                 getter
         )
 
-fun <C : Any, F : Any> createFieldOf(type: TypeReference<F>, name: String, description: String?, getter: C.() -> F) =
+inline fun <reified C : Any, F : Any> createFieldOf(type: TypeReference<F>, name: String, description: String?, noinline getter: C.() -> F) =
         ObjectField<C, F>(
+                C::class,
                 type,
                 name,
                 description,
                 getter
         )
 
-inline fun <C : Any, reified F : Any> createFieldOf(name: String, description: String?, noinline getter: C.() -> F) =
+inline fun <reified C : Any, reified F : Any> createFieldOf(name: String, description: String?, noinline getter: C.() -> F) =
         createFieldOf(
                 typeRef<F>(),
                 name,
@@ -293,15 +330,16 @@ inline fun <C : Any, reified F : Any> createFieldOf(name: String, description: S
                 getter
         )
 
-fun <C : Any, F : Any> createListOf(type: TypeReference<F>, name: String, description: String?, getter: C.() -> List<F>) =
+inline fun <reified C : Any, F : Any> createListOf(type: TypeReference<F>, name: String, description: String?, noinline getter: C.() -> List<F>) =
         ListField<C, F>(
+                C::class,
                 type,
                 name,
                 description,
                 getter
         )
 
-inline fun <C : Any, reified F : Any> createListOf(name: String, description: String?, noinline getter: C.() -> List<F>) =
+inline fun <reified C : Any, reified F : Any> createListOf(name: String, description: String?, noinline getter: C.() -> List<F>) =
         createListOf(
                 typeRef<F>(),
                 name,
@@ -309,14 +347,15 @@ inline fun <C : Any, reified F : Any> createListOf(name: String, description: St
                 getter
         )
 
-fun <C : Any, F : Any, A : Any> createListOf(
+inline fun <reified C : Any, F : Any, A : Any> createListOf(
         type: TypeReference<F>,
         name: String,
         description: String?,
         argumentClass: KClass<A>,
-        getter: (C, A) -> List<F>
+        noinline getter: (C, A) -> List<F>
 ) =
         ListWithArgumentField<C, F, A>(
+                C::class,
                 type,
                 name,
                 description,
@@ -324,13 +363,14 @@ fun <C : Any, F : Any, A : Any> createListOf(
                 getter
         )
 
-inline fun <C : Any, reified F : Any, A : Any> createListOf(
+inline fun <reified C : Any, reified F : Any, A : Any> createListOf(
         name: String,
         description: String?,
         argumentClass: KClass<A>,
         noinline getter: (C, A) -> List<F>
 ) =
         ListWithArgumentField<C, F, A>(
+                C::class,
                 typeRef<F>(),
                 name,
                 description,
