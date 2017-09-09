@@ -17,7 +17,7 @@ class TypeBranch
         get() = objectType {
             fieldInt("id", "Branch ID", Branch::id)
             fieldString("name", "Branch name", Branch::name)
-            // TODO fieldString(Branch::description)
+            fieldNullableString("description", "Branch description", Branch::description)
             // TODO fieldBoolean(Branch::disabled)
             fieldOf("project", "Associated project", Branch::project)
         }
@@ -36,7 +36,7 @@ constructor(
         get() = objectType {
             fieldInt("id", "Project ID", Project::id)
             fieldString("name", "Project name", Project::name)
-            // TODO fieldString(Project::description)
+            fieldNullableString("description", "Project description", Project::description)
             // TODO fieldBoolean(Project::disabled)
             listOf(
                     typeRef<Branch>(),

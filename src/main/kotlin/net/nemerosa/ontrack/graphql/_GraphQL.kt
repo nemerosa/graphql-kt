@@ -5,17 +5,17 @@ import kotlin.reflect.KClass
 /**
  * Field
  */
-interface Field<C : Any, F : Any> {
+interface Field<C : Any, F> {
     val name: String
     val description: String?
 }
 
-abstract class AbstractField<C : Any, F : Any>(
+abstract class AbstractField<C : Any, F>(
         override val name: String,
         override val description: String? = null)
     : Field<C, F>
 
-abstract class ScalarField<C : Any, F : Any>(
+abstract class ScalarField<C : Any, F>(
         name: String,
         description: String? = null,
         private val getter: C.() -> F
@@ -73,6 +73,12 @@ class StringField<C : Any>(
         description: String? = null,
         getter: C.() -> String
 ) : ScalarField<C, String>(name, description, getter)
+
+class NullableStringField<C : Any>(
+        name: String,
+        description: String? = null,
+        getter: C.() -> String?
+) : ScalarField<C, String?>(name, description, getter)
 
 /**
  * Type reference
@@ -163,6 +169,16 @@ fun <C : Any> TypeBuilder<C>.fieldString(name: String, description: String?, get
     )
 }
 
+fun <C : Any> TypeBuilder<C>.fieldNullableString(name: String, description: String?, getter: C.() -> String?) {
+    field(
+            createFieldNullableString(
+                    name,
+                    description,
+                    getter
+            )
+    )
+}
+
 fun <C : Any, F : Any> TypeBuilder<C>.fieldOf(type: TypeReference<F>, name: String, description: String?, getter: C.() -> F) {
     field(
             createFieldOf(
@@ -217,6 +233,13 @@ fun <C : Any> createFieldInt(name: String, description: String?, getter: C.() ->
 
 fun <C : Any> createFieldString(name: String, description: String?, getter: C.() -> String) =
         StringField<C>(
+                name,
+                description,
+                getter
+        )
+
+fun <C : Any> createFieldNullableString(name: String, description: String?, getter: C.() -> String?) =
+        NullableStringField<C>(
                 name,
                 description,
                 getter
