@@ -1,5 +1,7 @@
 package net.nemerosa.ontrack.graphql
 
+import graphql.Scalars
+import graphql.schema.*
 import kotlin.reflect.KClass
 
 /**
@@ -8,6 +10,16 @@ import kotlin.reflect.KClass
 interface Field<C : Any, F> {
     val name: String
     val description: String?
+    val binding: GraphQLFieldDefinition
+        get() = GraphQLFieldDefinition.newFieldDefinition()
+                .name(name)
+                .description(description)
+                .type(bindingType)
+                // TODO Deprecation
+                // TODO Argument
+                // TODO Data fetcher
+                .build()
+    val bindingType: GraphQLOutputType
 }
 
 abstract class AbstractField<C : Any, F>(
@@ -29,7 +41,10 @@ class ObjectField<C : Any, F : Any>(
         name: String,
         description: String? = null,
         private val getter: C.() -> F
-) : AbstractField<C, F>(name, description)
+) : AbstractField<C, F>(name, description) {
+    override val bindingType: GraphQLOutputType
+        get() = GraphQLNonNull(GraphQLTypeReference(type.typeName))
+}
 
 /**
  * List field
@@ -40,7 +55,10 @@ class ListField<C : Any, F : Any>(
         name: String,
         description: String? = null,
         private val getter: C.() -> List<F>
-) : AbstractField<C, F>(name, description)
+) : AbstractField<C, F>(name, description) {
+    override val bindingType: GraphQLOutputType
+        get() = GraphQLNonNull(GraphQLList(GraphQLNonNull(GraphQLTypeReference(type.typeName))))
+}
 
 /**
  * List field with arguments
@@ -52,7 +70,10 @@ class ListWithArgumentField<C : Any, F : Any, A : Any>(
         description: String? = null,
         argumentClass: KClass<A>,
         private val getter: (C, A) -> List<F>
-) : AbstractField<C, F>(name, description)
+) : AbstractField<C, F>(name, description) {
+    override val bindingType: GraphQLOutputType
+        get() = GraphQLNonNull(GraphQLList(GraphQLNonNull(GraphQLTypeReference(type.typeName))))
+}
 
 /**
  * Integer field
@@ -62,7 +83,10 @@ class IntField<C : Any>(
         name: String,
         description: String? = null,
         getter: C.() -> Int
-) : ScalarField<C, Int>(name, description, getter)
+) : ScalarField<C, Int>(name, description, getter) {
+    override val bindingType: GraphQLOutputType
+        get() = GraphQLNonNull(Scalars.GraphQLInt)
+}
 
 /**
  * String field
@@ -72,13 +96,21 @@ class StringField<C : Any>(
         name: String,
         description: String? = null,
         getter: C.() -> String
-) : ScalarField<C, String>(name, description, getter)
+) : ScalarField<C, String>(name, description, getter) {
+    override val bindingType: GraphQLOutputType
+        get() = GraphQLNonNull(Scalars.GraphQLString)
+}
+
 
 class NullableStringField<C : Any>(
         name: String,
         description: String? = null,
         getter: C.() -> String?
-) : ScalarField<C, String?>(name, description, getter)
+) : ScalarField<C, String?>(name, description, getter) {
+    override val bindingType: GraphQLOutputType
+        get() = Scalars.GraphQLString
+}
+
 
 /**
  * Type reference
