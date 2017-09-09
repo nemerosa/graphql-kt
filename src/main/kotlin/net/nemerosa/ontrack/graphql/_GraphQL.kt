@@ -32,6 +32,16 @@ class IntField<C : Any>(
 ) : ScalarField<C, Int>(name, description, getter)
 
 /**
+ * String field
+ */
+
+class StringField<C : Any>(
+        name: String,
+        description: String? = null,
+        getter: C.() -> String
+) : ScalarField<C, String>(name, description, getter)
+
+/**
  * Type
  */
 class Type<C : Any>(
@@ -79,6 +89,16 @@ inline fun <reified C : Any> objectType(init: TypeBuilder<C>.() -> Unit): Type<C
 fun <C : Any> TypeBuilder<C>.fieldInt(name: String, description: String?, getter: C.() -> Int) {
     field(
             IntField<C>(
+                    name,
+                    description,
+                    getter
+            )
+    )
+}
+
+fun <C : Any> TypeBuilder<C>.fieldString(name: String, description: String?, getter: C.() -> String) {
+    field(
+            StringField<C>(
                     name,
                     description,
                     getter

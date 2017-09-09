@@ -29,7 +29,7 @@ constructor(
     override val type: Type<Project>
         get() = objectType {
             fieldInt("id", "Project ID", Project::id)
-            // TODO fieldString(Project::name)
+            fieldString("name", "Project name", Project::name)
             // TODO fieldString(Project::description)
             // TODO fieldBoolean(Project::disabled)
             // TODO("Needs the branch type")
