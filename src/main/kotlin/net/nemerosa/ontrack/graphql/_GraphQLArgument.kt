@@ -18,3 +18,9 @@ class ReflectionArgument<A : Any>(
 }
 
 fun <A : Any> KClass<A>.asArgument() = ReflectionArgument(this)
+
+@Target(AnnotationTarget.PROPERTY)
+@MustBeDocumented
+annotation class ArgumentField(
+        val description: String = ""
+)
