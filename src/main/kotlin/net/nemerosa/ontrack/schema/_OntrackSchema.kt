@@ -19,6 +19,7 @@ class TypeBranch
             fieldString("name", "Branch name", Branch::name)
             // TODO fieldString(Branch::description)
             // TODO fieldBoolean(Branch::disabled)
+            fieldOf("project", "Associated project", Branch::project)
         }
 }
 

@@ -22,6 +22,16 @@ abstract class ScalarField<C : Any, F : Any>(
 ) : AbstractField<C, F>(name, description)
 
 /**
+ * Object field
+ */
+class ObjectField<C : Any, F : Any>(
+        private val type: TypeReference<F>,
+        name: String,
+        description: String? = null,
+        private val getter: C.() -> F
+) : AbstractField<C, F>(name, description)
+
+/**
  * Integer field
  */
 
@@ -42,11 +52,31 @@ class StringField<C : Any>(
 ) : ScalarField<C, String>(name, description, getter)
 
 /**
+ * Type reference
+ */
+interface TypeReference<C : Any> {
+    val typeName: String
+}
+
+val <C : Any> KClass<C>.typeName: String get() = simpleName!!
+
+inline fun <reified C : Any> typeRef(): TypeReference<C> =
+        object : TypeReference<C> {
+            override val typeName: String
+                get() = C::class.typeName
+        }
+
+/**
  * Type
  */
 class Type<C : Any>(
         val cls: KClass<C>
-)
+) : TypeReference<C> {
+    /**
+     * Type name
+     */
+    override val typeName: String get() = cls.typeName
+}
 
 /**
  * Object type definition
@@ -103,5 +133,25 @@ fun <C : Any> TypeBuilder<C>.fieldString(name: String, description: String?, get
                     description,
                     getter
             )
+    )
+}
+
+fun <C : Any, F : Any> TypeBuilder<C>.fieldOf(type: TypeReference<F>, name: String, description: String?, getter: C.() -> F) {
+    field(
+            ObjectField<C, F>(
+                    type,
+                    name,
+                    description,
+                    getter
+            )
+    )
+}
+
+inline fun <C : Any, reified F : Any> TypeBuilder<C>.fieldOf(name: String, description: String?, noinline getter: C.() -> F) {
+    fieldOf(
+            typeRef<F>(),
+            name,
+            description,
+            getter
     )
 }
