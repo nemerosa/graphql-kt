@@ -43,7 +43,10 @@ abstract class ScalarField<C : Any, F>(
         name: String,
         description: String? = null,
         private val getter: C.() -> F
-) : AbstractField<C, F>(containerClass, name, description)
+) : AbstractField<C, F>(containerClass, name, description) {
+    override fun bindingGet(environment: DataFetchingEnvironment, container: C) =
+            container.getter()
+}
 
 /**
  * Object field
@@ -111,8 +114,6 @@ class IntField<C : Any>(
 ) : ScalarField<C, Int>(containerClass, name, description, getter) {
     override val bindingType: GraphQLOutputType
         get() = GraphQLNonNull(Scalars.GraphQLInt)
-
-    override fun bindingGet(environment: DataFetchingEnvironment, container: C) = container.getter()
 }
 
 /**
@@ -127,8 +128,6 @@ class StringField<C : Any>(
 ) : ScalarField<C, String>(containerClass, name, description, getter) {
     override val bindingType: GraphQLOutputType
         get() = GraphQLNonNull(Scalars.GraphQLString)
-
-    override fun bindingGet(environment: DataFetchingEnvironment, container: C) = container.getter()
 }
 
 
@@ -140,8 +139,6 @@ class NullableStringField<C : Any>(
 ) : ScalarField<C, String?>(containerClass, name, description, getter) {
     override val bindingType: GraphQLOutputType
         get() = Scalars.GraphQLString
-
-    override fun bindingGet(environment: DataFetchingEnvironment, container: C) = container.getter()
 }
 
 
