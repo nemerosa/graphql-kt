@@ -92,7 +92,7 @@ class ListWithArgumentField<C : Any, F : Any, A : Any>(
         private val type: TypeReference<F>,
         name: String,
         description: String? = null,
-        argumentClass: KClass<A>,
+        argument: Argument<A>,
         private val getter: (C, A) -> List<F>
 ) : AbstractField<C, F>(containerClass, name, description) {
     override val bindingType: GraphQLOutputType
@@ -181,6 +181,14 @@ interface TypeDef<C : Any> {
  */
 interface RootQueryDef<F> {
     val field: Field<Unit, F>
+}
+
+/**
+ * Argument interface
+ */
+
+interface Argument<A> {
+
 }
 
 /**
@@ -348,6 +356,22 @@ inline fun <reified C : Any, F : Any, A : Any> createListOf(
         type: TypeReference<F>,
         name: String,
         description: String?,
+        argument: Argument<A>,
+        noinline getter: (C, A) -> List<F>
+) =
+        ListWithArgumentField<C, F, A>(
+                C::class,
+                type,
+                name,
+                description,
+                argument,
+                getter
+        )
+
+inline fun <reified C : Any, F : Any, A : Any> createListOf(
+        type: TypeReference<F>,
+        name: String,
+        description: String?,
         argumentClass: KClass<A>,
         noinline getter: (C, A) -> List<F>
 ) =
@@ -356,7 +380,7 @@ inline fun <reified C : Any, F : Any, A : Any> createListOf(
                 type,
                 name,
                 description,
-                argumentClass,
+                argumentClass.asArgument(),
                 getter
         )
 
@@ -371,6 +395,6 @@ inline fun <reified C : Any, reified F : Any, A : Any> createListOf(
                 typeRef<F>(),
                 name,
                 description,
-                argumentClass,
+                argumentClass.asArgument(),
                 getter
         )
