@@ -32,6 +32,29 @@ class ObjectField<C : Any, F : Any>(
 ) : AbstractField<C, F>(name, description)
 
 /**
+ * List field
+ */
+
+class ListField<C : Any, F : Any>(
+        private val type: TypeReference<F>,
+        name: String,
+        description: String? = null,
+        private val getter: C.() -> List<F>
+) : AbstractField<C, F>(name, description)
+
+/**
+ * List field with arguments
+ */
+
+class ListWithArgumentField<C : Any, F : Any, A : Any>(
+        private val type: TypeReference<F>,
+        name: String,
+        description: String? = null,
+        argumentClass: KClass<A>,
+        private val getter: (C, A) -> List<F>
+) : AbstractField<C, F>(name, description)
+
+/**
  * Integer field
  */
 
@@ -116,9 +139,13 @@ inline fun <reified C : Any> objectType(init: TypeBuilder<C>.() -> Unit): Type<C
     return builder.type
 }
 
+/**
+ * Field definitions in builders
+ */
+
 fun <C : Any> TypeBuilder<C>.fieldInt(name: String, description: String?, getter: C.() -> Int) {
     field(
-            IntField<C>(
+            createFieldInt(
                     name,
                     description,
                     getter
@@ -128,7 +155,7 @@ fun <C : Any> TypeBuilder<C>.fieldInt(name: String, description: String?, getter
 
 fun <C : Any> TypeBuilder<C>.fieldString(name: String, description: String?, getter: C.() -> String) {
     field(
-            StringField<C>(
+            createFieldString(
                     name,
                     description,
                     getter
@@ -138,7 +165,7 @@ fun <C : Any> TypeBuilder<C>.fieldString(name: String, description: String?, get
 
 fun <C : Any, F : Any> TypeBuilder<C>.fieldOf(type: TypeReference<F>, name: String, description: String?, getter: C.() -> F) {
     field(
-            ObjectField<C, F>(
+            createFieldOf(
                     type,
                     name,
                     description,
@@ -155,3 +182,103 @@ inline fun <C : Any, reified F : Any> TypeBuilder<C>.fieldOf(name: String, descr
             getter
     )
 }
+
+inline fun <C : Any, reified F : Any> TypeBuilder<C>.listOf(name: String, description: String?, noinline getter: C.() -> List<F>) {
+    field(
+            createListOf(
+                    name,
+                    description,
+                    getter
+            )
+    )
+}
+
+inline fun <C : Any, reified F : Any, A : Any> TypeBuilder<C>.listOf(name: String, description: String?, argumentClass: KClass<A>, noinline getter: (C, A) -> List<F>) {
+    field(
+            createListOf(
+                    name,
+                    description,
+                    argumentClass,
+                    getter
+            )
+    )
+}
+
+/**
+ * Field definitions
+ */
+
+fun <C : Any> createFieldInt(name: String, description: String?, getter: C.() -> Int) =
+        IntField<C>(
+                name,
+                description,
+                getter
+        )
+
+fun <C : Any> createFieldString(name: String, description: String?, getter: C.() -> String) =
+        StringField<C>(
+                name,
+                description,
+                getter
+        )
+
+fun <C : Any, F : Any> createFieldOf(type: TypeReference<F>, name: String, description: String?, getter: C.() -> F) =
+        ObjectField<C, F>(
+                type,
+                name,
+                description,
+                getter
+        )
+
+inline fun <C : Any, reified F : Any> createFieldOf(name: String, description: String?, noinline getter: C.() -> F) =
+        createFieldOf(
+                typeRef<F>(),
+                name,
+                description,
+                getter
+        )
+
+fun <C : Any, F : Any> createListOf(type: TypeReference<F>, name: String, description: String?, getter: C.() -> List<F>) =
+        ListField<C, F>(
+                type,
+                name,
+                description,
+                getter
+        )
+
+inline fun <C : Any, reified F : Any> createListOf(name: String, description: String?, noinline getter: C.() -> List<F>) =
+        createListOf(
+                typeRef<F>(),
+                name,
+                description,
+                getter
+        )
+
+fun <C : Any, F : Any, A : Any> createListOf(
+        type: TypeReference<F>,
+        name: String,
+        description: String?,
+        argumentClass: KClass<A>,
+        getter: (C, A) -> List<F>
+) =
+        ListWithArgumentField<C, F, A>(
+                type,
+                name,
+                description,
+                argumentClass,
+                getter
+        )
+
+inline fun <C : Any, reified F : Any, A : Any> createListOf(
+        name: String,
+        description: String?,
+        argumentClass: KClass<A>,
+        noinline getter: (C, A) -> List<F>
+) =
+        ListWithArgumentField<C, F, A>(
+                typeRef<F>(),
+                name,
+                description,
+                argumentClass,
+                getter
+        )

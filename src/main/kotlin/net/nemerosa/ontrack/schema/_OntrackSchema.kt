@@ -30,7 +30,7 @@ class TypeBranch
 class TypeProject
 @Autowired
 constructor(
-        structureService: StructureService
+        private val structureService: StructureService
 ) : TypeDef<Project> {
     override val type: Type<Project>
         get() = objectType {
@@ -38,8 +38,18 @@ constructor(
             fieldString("name", "Project name", Project::name)
             // TODO fieldString(Project::description)
             // TODO fieldBoolean(Project::disabled)
-            // TODO("Needs the branch type")
+            listOf(
+                    typeRef<Branch>(),
+                    "branches",
+                    "Project branches",
+                    ProjectBranchListArguments::class,
+                    { p: Project, _: ProjectBranchListArguments -> structureService.getBranchesByProject(p) }
+            )
         }
+
+    data class ProjectBranchListArguments(
+            val name: String?
+    )
 }
 
 /**
@@ -50,9 +60,13 @@ class RootProjects
 @Autowired
 constructor
 (
-        structureService: StructureService
+        private val structureService: StructureService
 ) : RootQueryDef<Project> {
     override val field: Field<Unit, Project>
-        get() = TODO("Need for project type")
+        get() = createListOf(
+                "projects",
+                "List of projects",
+                { structureService.getProjects() }
+        )
 
 }
