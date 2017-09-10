@@ -16,12 +16,17 @@ annotation class InputField(
         val description: String = ""
 )
 
+@Target(AnnotationTarget.CLASS)
+@MustBeDocumented
+annotation class Input
+
 fun <A : Any> KClass<A>.toInputType(): GraphQLInputType =
         when {
             this.isSubclassOf(String::class) -> Scalars.GraphQLString
             this.isSubclassOf(Int::class) -> Scalars.GraphQLInt
         // TODO All scalar types
-            else -> this.toInputObjectType()
+            this.findAnnotation<Input>() != null -> this.toInputObjectType()
+            else -> throw IllegalArgumentException("Cannot convert $qualifiedName to input type")
         }
 
 fun <A : Any> KClass<A>.toInputObjectType(): GraphQLInputObjectType =
@@ -56,11 +61,14 @@ fun <T : Any> KClass<T>.getInputValue(value: Any): Any =
         when {
             this.isSubclassOf(String::class) -> String::class.cast(value)
             this.isSubclassOf(Int::class) -> Int::class.cast(value)
-            this.isSubclassOf(Map::class) -> this.getInputObjectValue(value as Map<String, Any>)
+            findAnnotation<Input>() != null -> this.getInputObjectValue(value as Map<String, Any>)
             else -> throw IllegalArgumentException("Cannot convert input from $qualifiedName")
         }
 
 fun <T : Any> KClass<T>.getInputObjectValue(value: Map<String, Any>): T {
+    if (findAnnotation<Input>() == null) {
+        throw IllegalArgumentException("$qualifiedName must be annotated with @${Input::class.simpleName}")
+    }
     val constructor = primaryConstructor!!
     val inputs: List<Any?> = constructor.parameters.map {
         val name = it.name!!

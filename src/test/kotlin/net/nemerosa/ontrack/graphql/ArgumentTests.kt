@@ -94,16 +94,21 @@ class ArgumentTests {
 
 }
 
+@Input
 data class SimpleArg(val name: String?)
 
+@Input
 data class SimpleArgWithDescription(
         @InputField("Name of the argument")
         val name: String?
 )
 
+@Input
 data class MultipleArgument(val id: Int?, @InputField("Regular expression") val name: String?)
 
+@Input
 data class Address(val city: String, val country: String?)
+@Input
 data class Person(val name: String, val address: Address)
 
 fun assertNonNullType(expected: String, type: GraphQLInputType): GraphQLInputType {
