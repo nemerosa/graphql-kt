@@ -205,7 +205,7 @@ interface TypeDef<C : Any> {
 /**
  * Root query definition
  */
-interface RootQueryDef<F> {
+interface QueryDef<F> {
     val field: Field<Unit, F>
 }
 

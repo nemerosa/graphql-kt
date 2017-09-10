@@ -67,12 +67,12 @@ constructor(
  * List of projects
  */
 @Component
-class RootProjects
+class Projects
 @Autowired
 constructor
 (
         private val structureService: StructureService
-) : RootQueryDef<Project> {
+) : QueryDef<Project> {
     override val field: Field<Unit, Project>
         get() = createListOf(
                 "projects",
