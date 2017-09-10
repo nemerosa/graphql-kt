@@ -174,6 +174,7 @@ inline fun <reified C : Any> typeRef(): TypeReference<C> =
  */
 class Type<C : Any>(
         private val cls: KClass<C>,
+        private val description: String,
         private val fields: List<Field<C, *>>
 ) : TypeReference<C> {
     /**
@@ -187,7 +188,7 @@ class Type<C : Any>(
         get() =
             GraphQLObjectType.newObject()
                     .name(typeName)
-                    // TODO Description?
+                    .description(description)
                     .fields(
                             fields.map { it.binding }
                     )
@@ -222,7 +223,8 @@ interface Argument<A> {
  */
 
 class TypeBuilder<C : Any>(
-        private val cls: KClass<C>
+        private val cls: KClass<C>,
+        private val description: String
 ) {
     private val fields = mutableListOf<Field<C, *>>()
 
@@ -231,12 +233,12 @@ class TypeBuilder<C : Any>(
     }
 
     val type: Type<C>
-        get() = Type(cls, fields.toList())
+        get() = Type(cls, description, fields.toList())
 
 }
 
-inline fun <reified C : Any> objectType(init: TypeBuilder<C>.() -> Unit): Type<C> {
-    val builder = TypeBuilder(C::class)
+inline fun <reified C : Any> objectType(description: String, init: TypeBuilder<C>.() -> Unit): Type<C> {
+    val builder = TypeBuilder(C::class, description)
     builder.init()
     return builder.type
 }

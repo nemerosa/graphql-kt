@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component
 class TypeBranch
     : TypeDef<Branch> {
     override val type: Type<Branch>
-        get() = objectType {
+        get() = objectType("Branch associated to a project") {
             fieldInt("id", "Branch ID", Branch::id)
             fieldString("name", "Branch name", Branch::name)
             fieldNullableString("description", "Branch description", Branch::description)
@@ -33,7 +33,7 @@ constructor(
         private val structureService: StructureService
 ) : TypeDef<Project> {
     override val type: Type<Project>
-        get() = objectType {
+        get() = objectType("Project") {
             fieldInt("id", "Project ID", Project::id)
             fieldString("name", "Project name", Project::name)
             fieldNullableString("description", "Project description", Project::description)
