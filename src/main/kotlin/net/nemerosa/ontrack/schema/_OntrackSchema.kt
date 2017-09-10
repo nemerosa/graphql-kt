@@ -43,7 +43,14 @@ constructor(
                     "branches",
                     "Project branches",
                     ProjectBranchListArguments::class,
-                    { p: Project, _: ProjectBranchListArguments -> structureService.getBranchesByProject(p) }
+                    { p: Project, arg: ProjectBranchListArguments ->
+                        if (arg.name != null) {
+                            structureService.getBranchesByProject(p)
+                                    .filter { it.name.matches(Regex(arg.name)) }
+                        } else {
+                            structureService.getBranchesByProject(p)
+                        }
+                    }
             )
         }
 
