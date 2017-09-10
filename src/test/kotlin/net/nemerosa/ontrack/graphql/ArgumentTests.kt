@@ -39,9 +39,9 @@ class ArgumentTests {
         assertEquals("", a.description)
         assertEquals("Int", a.type.name)
 
-        assertEquals("name", a.name)
-        assertEquals("Regular expression", a.description)
-        assertEquals("String", a.type.name)
+        assertEquals("name", b.name)
+        assertEquals("Regular expression", b.description)
+        assertEquals("String", b.type.name)
     }
 
     // TODO Composite type
