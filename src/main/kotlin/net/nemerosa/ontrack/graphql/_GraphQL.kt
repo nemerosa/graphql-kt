@@ -247,6 +247,10 @@ inline fun <reified C : Any> objectType(description: String, init: TypeBuilder<C
  * Field definitions in builders
  */
 
+fun <C : Any> TypeBuilder<C>.fields(fields: List<Field<C, *>>) {
+    fields.forEach { field(it) }
+}
+
 inline fun <reified C : Any> TypeBuilder<C>.fieldInt(name: String, description: String?, noinline getter: C.() -> Int) {
     field(
             createFieldInt(

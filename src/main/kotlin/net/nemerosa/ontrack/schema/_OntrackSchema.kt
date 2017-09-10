@@ -52,6 +52,10 @@ constructor(
                         }
                     }
             )
+            // List of extra fields
+            fields(listOf(
+                    createFieldInt<Project>("age", "Age based on ID...") { 17 + id }
+            ))
         }
 
     data class ProjectBranchListArguments(
