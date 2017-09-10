@@ -1,8 +1,6 @@
 package net.nemerosa.ontrack.graphql
 
-import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLInputType
-import graphql.schema.GraphQLNonNull
+import graphql.schema.*
 import org.junit.Test
 import kotlin.reflect.full.cast
 import kotlin.test.assertEquals
@@ -79,6 +77,50 @@ class ArgumentTests {
     }
 
     @Test
+    fun `List type`() {
+        val argument = Mailing::class.asArgument()
+        val arguments = argument.bindingArguments
+        assertEquals(2, arguments.size)
+
+        val (addresses, subject) = arguments
+
+        assertEquals("subject", subject.name)
+        assertNonNullType("String", subject.type)
+
+        assertEquals("addresses", addresses.name)
+        assertListType("Address", addresses.type)
+    }
+
+    @Test
+    fun `List input`() {
+        val input = Mailing::class.getInputObjectValue(
+                mapOf(
+                        "subject" to "Test",
+                        "addresses" to listOf(
+                                mapOf(
+                                        "city" to "Orléans",
+                                        "country" to "France"
+                                ),
+                                mapOf(
+                                        "city" to "Brussels",
+                                        "country" to "Belgium"
+                                )
+                        )
+                )
+        )
+        assertEquals(
+                Mailing(
+                        "Test",
+                        listOf(
+                                Address("Orléans", "France"),
+                                Address("Brussels", "Belgium")
+                        )
+                ),
+                input
+        )
+    }
+
+    @Test
     fun `Simple input`() {
         val input = SimpleArg::class.getInputObjectValue(mapOf("name" to "Test"))
         assertEquals("Test", input.name)
@@ -125,13 +167,31 @@ data class Address(val city: String, val country: String?)
 data class Person(val name: String, val address: Address)
 
 @Input
-data class Mailing(val subject: String, val addresses: List<Address>)
+data class Mailing(
+        val subject: String,
+        @InputField("List of addresses")
+        @InputList(type = Address::class)
+        val addresses: List<Address>
+)
 
-fun assertNonNullType(expected: String, type: GraphQLInputType): GraphQLInputType {
+fun assertNonNullType(expected: String, type: GraphQLType): GraphQLInputType {
     if (type is GraphQLNonNull) {
         assertEquals(expected, type.wrappedType.name)
         return type.wrappedType as GraphQLInputType
     } else {
         fail("$type is not a GraphQLNonNull")
+    }
+}
+
+fun assertListType(expected: String, type: GraphQLType) {
+    if (type is GraphQLNonNull) {
+        val listType = type.wrappedType
+        if (listType is GraphQLList) {
+            assertNonNullType(expected, listType.wrappedType)
+        } else {
+            fail("$type is not a GraphQLNonNull(GraphQLList)")
+        }
+    } else {
+        fail("$type is not a GraphQLNonNull(GraphQLList)")
     }
 }

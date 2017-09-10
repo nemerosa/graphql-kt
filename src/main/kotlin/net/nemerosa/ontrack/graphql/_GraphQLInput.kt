@@ -1,10 +1,7 @@
 package net.nemerosa.ontrack.graphql
 
 import graphql.Scalars
-import graphql.schema.GraphQLInputObjectField
-import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLInputType
-import graphql.schema.GraphQLNonNull
+import graphql.schema.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
@@ -14,6 +11,12 @@ import kotlin.reflect.jvm.jvmErasure
 @MustBeDocumented
 annotation class InputField(
         val description: String = ""
+)
+
+@Target(AnnotationTarget.PROPERTY)
+@MustBeDocumented
+annotation class InputList(
+        val type: KClass<*>
 )
 
 @Target(AnnotationTarget.CLASS)
@@ -41,7 +44,7 @@ fun <A : Any> KClass<A>.toInputObjectType(): GraphQLInputObjectType {
 }
 
 
-private fun <T, R> KProperty1<T, R>.asField(): GraphQLInputObjectField {
+fun <T, R> KProperty1<T, R>.asField(): GraphQLInputObjectField {
     val f = GraphQLInputObjectField.newInputObjectField()
     // Annotation
     val annotation: InputField? = findAnnotation()
@@ -49,12 +52,24 @@ private fun <T, R> KProperty1<T, R>.asField(): GraphQLInputObjectField {
     f.name(name)
     // Description
     f.description(annotation?.description ?: "")
-    // Type
-    val type = returnType.jvmErasure.toInputType()
-    if (returnType.isMarkedNullable) {
-        f.type(type)
-    } else {
-        f.type(GraphQLNonNull(type))
+    // List?
+    if (returnType.jvmErasure.isSubclassOf(List::class)) {
+        // @InputList annotation is required because the type of element is erased
+        val listAnnotation = findAnnotation<InputList>() ?: throw IllegalArgumentException(
+                """$name is a list and must be annotated
+                    |with @${InputList::class.simpleName} because
+                    |the type of element is erased at compilation time.""".trimMargin())
+        val elementType = listAnnotation.type.toInputType()
+        f.type(GraphQLNonNull(GraphQLList(GraphQLNonNull(elementType))))
+    }
+    // Any other type
+    else {
+        val type = returnType.jvmErasure.toInputType()
+        if (returnType.isMarkedNullable) {
+            f.type(type)
+        } else {
+            f.type(GraphQLNonNull(type))
+        }
     }
     // OK
     return f.build()
