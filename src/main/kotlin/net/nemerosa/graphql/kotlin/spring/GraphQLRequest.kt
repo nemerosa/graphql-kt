@@ -5,3 +5,9 @@ data class GraphQLRequest(
         val variables: Map<String, Any>? = null,
         val operationName: String?
 )
+
+fun String.toGraphQLRequest(variables: Map<String, Any>? = null) = GraphQLRequest(
+        this,
+        variables,
+        null
+)

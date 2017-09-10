@@ -30,6 +30,7 @@ fun <A : Any> KClass<A>.toInputType(): GraphQLInputType =
         when {
             this.isSubclassOf(String::class) -> Scalars.GraphQLString
             this.isSubclassOf(Int::class) -> Scalars.GraphQLInt
+            this.isSubclassOf(Boolean::class) -> Scalars.GraphQLBoolean
         // TODO All scalar types
             this.findAnnotation<Input>() != null -> this.toInputObjectType()
             else -> throw IllegalArgumentException("Cannot convert $qualifiedName to input type")
@@ -85,6 +86,7 @@ fun <T : Any> KClass<T>.getInputValue(value: Any): Any =
         when {
             this.isSubclassOf(String::class) -> String::class.cast(value)
             this.isSubclassOf(Int::class) -> Int::class.cast(value)
+            this.isSubclassOf(Boolean::class) -> Boolean::class.cast(value)
             findAnnotation<Input>() != null -> this.getInputObjectValue(value as Map<String, Any>)
             else -> throw IllegalArgumentException("Cannot convert input from $qualifiedName")
         }

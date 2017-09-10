@@ -1,10 +1,7 @@
-package net.nemerosa.ontrack
+package net.nemerosa.graphql.kotlin.spring
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import graphql.schema.GraphQLSchema
-import net.nemerosa.graphql.kotlin.spring.GraphQLExecutor
-import net.nemerosa.graphql.kotlin.spring.GraphQLRequest
 import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
@@ -18,7 +15,7 @@ import java.io.IOException
 class GraphqlController
 @Autowired
 constructor(
-        private val schema: GraphQLSchema,
+        private val schemaProvider: GraphQLSchemaProvider,
         private val executor: GraphQLExecutor
 ) {
 
@@ -40,7 +37,7 @@ constructor(
         // Runs the query
         return ResponseEntity.ok(
                 executor.requestAsJson(
-                        schema,
+                        schemaProvider.schema,
                         GraphQLRequest(
                                 query,
                                 arguments,
@@ -61,7 +58,7 @@ constructor(
         val request = objectMapper.readValue(input, GraphQLRequest::class.java)!!
         // Runs the query
         return ResponseEntity.ok(
-                executor.requestAsJson(schema, request)
+                executor.requestAsJson(schemaProvider.schema, request)
         )
     }
 

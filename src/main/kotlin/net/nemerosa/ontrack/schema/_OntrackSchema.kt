@@ -18,7 +18,7 @@ class TypeBranch
             fieldInt("id", "Branch ID", Branch::id)
             fieldString("name", "Branch name", Branch::name)
             fieldNullableString("description", "Branch description", Branch::description)
-            // TODO fieldBoolean(Branch::disabled)
+            fieldBoolean("disabled", "Status of the branch", Branch::disabled)
             fieldOf("project", "Associated project", Branch::project)
         }
 }
@@ -37,7 +37,7 @@ constructor(
             fieldInt("id", "Project ID", Project::id)
             fieldString("name", "Project name", Project::name)
             fieldNullableString("description", "Project description", Project::description)
-            // TODO fieldBoolean(Project::disabled)
+            fieldBoolean("disabled", "Status of the project", Project::disabled)
             listOf(
                     typeRef<Branch>(),
                     "branches",

@@ -6,7 +6,9 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLSchema
+import org.springframework.stereotype.Component
 
+@Component
 class DefaultGraphQLExecutor : GraphQLExecutor {
 
     private val objectMapper: ObjectMapper = ObjectMapper()

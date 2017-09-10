@@ -151,6 +151,20 @@ class IntField<C : Any>(
 }
 
 /**
+ * Boolean field
+ */
+
+class BooleanField<C : Any>(
+        private val containerClass: KClass<C>,
+        name: String,
+        description: String? = null,
+        private val getter: C.() -> Boolean
+) : ScalarField<C, Boolean>(containerClass, name, description, getter) {
+    override val bindingType: GraphQLOutputType
+        get() = GraphQLNonNull(Scalars.GraphQLBoolean)
+}
+
+/**
  * String field
  */
 
@@ -290,6 +304,16 @@ inline fun <reified C : Any> TypeBuilder<C>.fieldInt(name: String, description: 
     )
 }
 
+inline fun <reified C : Any> TypeBuilder<C>.fieldBoolean(name: String, description: String?, noinline getter: C.() -> Boolean) {
+    field(
+            createFieldBoolean(
+                    name,
+                    description,
+                    getter
+            )
+    )
+}
+
 inline fun <reified C : Any> TypeBuilder<C>.fieldString(name: String, description: String?, noinline getter: C.() -> String) {
     field(
             createFieldString(
@@ -357,6 +381,14 @@ inline fun <reified C : Any, reified F : Any, A : Any> TypeBuilder<C>.listOf(nam
 
 inline fun <reified C : Any> createFieldInt(name: String, description: String?, noinline getter: C.() -> Int) =
         IntField<C>(
+                C::class,
+                name,
+                description,
+                getter
+        )
+
+inline fun <reified C : Any> createFieldBoolean(name: String, description: String?, noinline getter: C.() -> Boolean) =
+        BooleanField<C>(
                 C::class,
                 name,
                 description,
