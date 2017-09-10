@@ -18,7 +18,9 @@ annotation class InputField(
 
 @Target(AnnotationTarget.CLASS)
 @MustBeDocumented
-annotation class Input
+annotation class Input(
+        val description: String = ""
+)
 
 fun <A : Any> KClass<A>.toInputType(): GraphQLInputType =
         when {
@@ -29,12 +31,14 @@ fun <A : Any> KClass<A>.toInputType(): GraphQLInputType =
             else -> throw IllegalArgumentException("Cannot convert $qualifiedName to input type")
         }
 
-fun <A : Any> KClass<A>.toInputObjectType(): GraphQLInputObjectType =
-        GraphQLInputObjectType.newInputObject()
-                .name(typeName)
-                // TODO Description from annotation
-                .fields(memberProperties.map { it.asField() })
-                .build()
+fun <A : Any> KClass<A>.toInputObjectType(): GraphQLInputObjectType {
+    val input = findAnnotation<Input>() ?: throw IllegalArgumentException("$qualifiedName must be annotated with @${Input::class.simpleName}")
+    return GraphQLInputObjectType.newInputObject()
+            .name(typeName)
+            .description(input.description)
+            .fields(memberProperties.map { it.asField() })
+            .build()
+}
 
 
 private fun <T, R> KProperty1<T, R>.asField(): GraphQLInputObjectField {
