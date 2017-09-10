@@ -1,6 +1,7 @@
 package net.nemerosa.ontrack.graphql
 
 import graphql.schema.*
+import net.nemerosa.graphql.kotlin.core.*
 import org.junit.Test
 import kotlin.reflect.full.cast
 import kotlin.test.assertEquals

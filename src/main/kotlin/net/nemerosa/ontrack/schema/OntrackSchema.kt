@@ -2,8 +2,8 @@ package net.nemerosa.ontrack.schema
 
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import net.nemerosa.ontrack.graphql.RootQueryDef
-import net.nemerosa.ontrack.graphql.TypeDef
+import net.nemerosa.graphql.kotlin.core.RootQueryDef
+import net.nemerosa.graphql.kotlin.core.TypeDef
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

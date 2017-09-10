@@ -1,4 +1,4 @@
-package net.nemerosa.ontrack.graphql
+package net.nemerosa.graphql.kotlin.core
 
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLArgument

@@ -1,5 +1,6 @@
 package net.nemerosa.ontrack.schema
 
+import net.nemerosa.graphql.kotlin.core.*
 import net.nemerosa.ontrack.graphql.*
 import net.nemerosa.ontrack.model.Branch
 import net.nemerosa.ontrack.model.Project
