@@ -2,6 +2,7 @@ package net.nemerosa.ontrack
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLSchema
@@ -87,12 +88,15 @@ constructor(
      */
     fun request(request: Request): ExecutionResult {
         // TODO Execution strategy
-        return GraphQL(schema).execute(
-                request.query,
-                request.operationName,
-                null, // No context
-                request.variables ?: mapOf()
-        )
+        return GraphQL.newGraphQL(schema)
+                .build()
+                .execute(
+                        ExecutionInput.newExecutionInput()
+                                .query(request.query)
+                                .operationName(request.operationName)
+                                .variables(request.variables ?: mapOf())
+                                .build()
+                )
 
     }
 

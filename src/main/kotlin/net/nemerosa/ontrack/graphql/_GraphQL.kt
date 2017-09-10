@@ -34,7 +34,7 @@ abstract class AbstractField<C : Any, F>(
     : Field<C, F> {
     override val bindingGetter: (DataFetchingEnvironment) -> Any?
         get() = {
-            bindingGet(it, containerClass.cast(it.source))
+            bindingGet(it, containerClass.cast(it.getSource()))
         }
 
     override val bindingArguments: List<GraphQLArgument>

@@ -41,7 +41,7 @@ dependencies {
     compile("org.jetbrains.kotlin:kotlin-stdlib-jre8:${kotlinVersion}")
     compile("org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}")
 
-    compile 'com.graphql-java:graphql-java:2.2.0'
+    compile 'com.graphql-java:graphql-java:4.1'
 
     testCompile('org.springframework.boot:spring-boot-starter-test')
     testCompile('org.springframework.security:spring-security-test')
