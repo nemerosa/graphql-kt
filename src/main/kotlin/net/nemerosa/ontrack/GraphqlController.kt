@@ -2,10 +2,9 @@ package net.nemerosa.ontrack
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import graphql.ExecutionInput
-import graphql.ExecutionResult
-import graphql.GraphQL
 import graphql.schema.GraphQLSchema
+import net.nemerosa.graphql.kotlin.spring.GraphQLExecutor
+import net.nemerosa.graphql.kotlin.spring.GraphQLRequest
 import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
@@ -19,19 +18,11 @@ import java.io.IOException
 class GraphqlController
 @Autowired
 constructor(
-        private val schema: GraphQLSchema
+        private val schema: GraphQLSchema,
+        private val executor: GraphQLExecutor
 ) {
 
     private val objectMapper: ObjectMapper = ObjectMapper()
-
-    /**
-     * Request model
-     */
-    data class Request(
-            val query: String,
-            val variables: Map<String, Any>? = null,
-            val operationName: String?
-    )
 
     /**
      * GET end point
@@ -48,8 +39,9 @@ constructor(
         val arguments = decodeIntoMap(variables)
         // Runs the query
         return ResponseEntity.ok(
-                requestAsJson(
-                        Request(
+                executor.requestAsJson(
+                        schema,
+                        GraphQLRequest(
                                 query,
                                 arguments,
                                 operationName
@@ -66,38 +58,11 @@ constructor(
     @Throws(IOException::class)
     fun post(@RequestBody input: String): ResponseEntity<JsonNode> {
         // Gets the components
-        val request = objectMapper.readValue(input, Request::class.java)!!
+        val request = objectMapper.readValue(input, GraphQLRequest::class.java)!!
         // Runs the query
         return ResponseEntity.ok(
-                requestAsJson(request)
+                executor.requestAsJson(schema, request)
         )
-    }
-
-    /**
-     * Request execution (JSON)
-     */
-    fun requestAsJson(request: Request): JsonNode {
-        return objectMapper.valueToTree(
-                request(request)
-        )
-
-    }
-
-    /**
-     * Request execution
-     */
-    fun request(request: Request): ExecutionResult {
-        // TODO Execution strategy
-        return GraphQL.newGraphQL(schema)
-                .build()
-                .execute(
-                        ExecutionInput.newExecutionInput()
-                                .query(request.query)
-                                .operationName(request.operationName)
-                                .variables(request.variables ?: mapOf())
-                                .build()
-                )
-
     }
 
     @Throws(IOException::class)
