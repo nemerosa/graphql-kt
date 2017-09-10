@@ -7,10 +7,11 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.jvmErasure
 
 class ReflectionArgument<A : Any>(
-        cls: KClass<A>
+        private val cls: KClass<A>
 ) : Argument<A> {
 
     override val bindingArguments: List<GraphQLArgument> = cls.memberProperties.map {
@@ -18,7 +19,23 @@ class ReflectionArgument<A : Any>(
     }
 
     override fun bindFrom(environment: DataFetchingEnvironment): A {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val constructor = cls.primaryConstructor!!
+        val inputs: List<Any?> = constructor.parameters.map {
+            val name = it.name!!
+            val type = it.type
+            val argumentValue: Any? = environment.getArgument(name)
+            if (argumentValue == null) {
+                if (type.isMarkedNullable) {
+                    null
+                } else {
+                    throw IllegalArgumentException("$name is null but is not marked as nullable")
+                }
+            } else {
+                type.jvmErasure.getInputValue(argumentValue)
+            }
+        }
+        // Call
+        return constructor.call(inputs.toTypedArray())
     }
 
 }

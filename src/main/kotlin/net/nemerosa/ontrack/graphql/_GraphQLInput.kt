@@ -7,6 +7,7 @@ import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLNonNull
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
+import kotlin.reflect.full.cast
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.memberProperties
@@ -52,3 +53,12 @@ private fun <T, R> KProperty1<T, R>.asField(): GraphQLInputObjectField {
     // OK
     return f.build()
 }
+
+fun <T : Any> KClass<T>.getInputValue(value: Any): Any =
+        when {
+            this.isSubclassOf(String::class) -> String::class.cast(value)
+            this.isSubclassOf(Int::class) -> Int::class.cast(value)
+            else -> this.getInputObjectValue(value)
+        }
+
+fun <T : Any> KClass<T>.getInputObjectValue(value: Any): T = TODO()
