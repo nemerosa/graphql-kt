@@ -7,7 +7,6 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.jvmErasure
 
 class ReflectionArgument<A : Any>(
@@ -18,25 +17,8 @@ class ReflectionArgument<A : Any>(
         it.asArgument()
     }
 
-    override fun bindFrom(environment: DataFetchingEnvironment): A {
-        val constructor = cls.primaryConstructor!!
-        val inputs: List<Any?> = constructor.parameters.map {
-            val name = it.name!!
-            val type = it.type
-            val argumentValue: Any? = environment.getArgument(name)
-            if (argumentValue == null) {
-                if (type.isMarkedNullable) {
-                    null
-                } else {
-                    throw IllegalArgumentException("$name is null but is not marked as nullable")
-                }
-            } else {
-                type.jvmErasure.getInputValue(argumentValue)
-            }
-        }
-        // Call
-        return constructor.call(inputs.toTypedArray())
-    }
+    override fun bindFrom(environment: DataFetchingEnvironment): A =
+            cls.getInputObjectValue(environment.arguments)
 
 }
 

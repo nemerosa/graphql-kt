@@ -7,10 +7,7 @@ import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLNonNull
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
-import kotlin.reflect.full.cast
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
 @Target(AnnotationTarget.PROPERTY)
@@ -54,11 +51,31 @@ private fun <T, R> KProperty1<T, R>.asField(): GraphQLInputObjectField {
     return f.build()
 }
 
+@Suppress("UNCHECKED_CAST")
 fun <T : Any> KClass<T>.getInputValue(value: Any): Any =
         when {
             this.isSubclassOf(String::class) -> String::class.cast(value)
             this.isSubclassOf(Int::class) -> Int::class.cast(value)
-            else -> this.getInputObjectValue(value)
+            this.isSubclassOf(Map::class) -> this.getInputObjectValue(value as Map<String, Any>)
+            else -> throw IllegalArgumentException("Cannot convert input from $qualifiedName")
         }
 
-fun <T : Any> KClass<T>.getInputObjectValue(value: Any): T = TODO()
+fun <T : Any> KClass<T>.getInputObjectValue(value: Map<String, Any>): T {
+    val constructor = primaryConstructor!!
+    val inputs: List<Any?> = constructor.parameters.map {
+        val name = it.name!!
+        val type = it.type
+        val actualValue: Any? = value[name]
+        if (actualValue == null) {
+            if (type.isMarkedNullable) {
+                null
+            } else {
+                throw IllegalArgumentException("$name is null but is not marked as nullable")
+            }
+        } else {
+            type.jvmErasure.getInputValue(actualValue)
+        }
+    }
+    // Call
+    return constructor.call(inputs.toTypedArray())
+}
