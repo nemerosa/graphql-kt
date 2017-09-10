@@ -90,7 +90,19 @@ class ArgumentTests {
         assertNull(input.name)
     }
 
-    // TODO List
+    @Test
+    fun `Composite input`() {
+        val input = Person::class.getInputObjectValue(mapOf(
+                "name" to "Damien",
+                "address" to mapOf(
+                        "city" to "Brussels",
+                        "country" to "Belgium"
+                )
+        ))
+        assertEquals("Damien", input.name)
+        assertEquals("Brussels", input.address.city)
+        assertEquals("Belgium", input.address.country)
+    }
 
 }
 
@@ -108,8 +120,12 @@ data class MultipleArgument(val id: Int?, @InputField("Regular expression") val 
 
 @Input
 data class Address(val city: String, val country: String?)
+
 @Input
 data class Person(val name: String, val address: Address)
+
+@Input
+data class Mailing(val subject: String, val addresses: List<Address>)
 
 fun assertNonNullType(expected: String, type: GraphQLInputType): GraphQLInputType {
     if (type is GraphQLNonNull) {
