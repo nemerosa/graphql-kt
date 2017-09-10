@@ -71,6 +71,28 @@ class ObjectField<C : Any, F : Any>(
 }
 
 /**
+ * Object field with argument
+ */
+class ObjectFieldWithArgument<C : Any, F : Any, A : Any>(
+        private val containerClass: KClass<C>,
+        private val type: TypeReference<F>,
+        name: String,
+        description: String? = null,
+        private val argument: Argument<A>,
+        private val getter: (C, A) -> F
+) : AbstractField<C, F>(containerClass, name, description) {
+    override val bindingType: GraphQLOutputType
+        get() = GraphQLNonNull(GraphQLTypeReference(type.typeName))
+
+    override fun bindingGet(environment: DataFetchingEnvironment, container: C): F {
+        // Gets the argument from the environment
+        val argumentValue: A = argument.bindFrom(environment)
+        // Call
+        return getter(container, argumentValue)
+    }
+}
+
+/**
  * List field
  */
 
@@ -206,6 +228,13 @@ interface TypeDef<C : Any> {
  * Root query definition
  */
 interface QueryDef<F> {
+    val field: Field<Unit, F>
+}
+
+/**
+ * Root mutation definition
+ */
+interface MutationDef<F> {
     val field: Field<Unit, F>
 }
 
@@ -364,6 +393,37 @@ inline fun <reified C : Any, reified F : Any> createFieldOf(name: String, descri
                 typeRef<F>(),
                 name,
                 description,
+                getter
+        )
+
+inline fun <reified C : Any, F : Any, A : Any> createFieldOfWithArgument(
+        type: TypeReference<F>,
+        name: String,
+        description: String?,
+        argumentClass: KClass<A>,
+        noinline getter: (C, A) -> F
+) =
+        ObjectFieldWithArgument<C, F, A>(
+                C::class,
+                type,
+                name,
+                description,
+                argumentClass.asArgument(),
+                getter
+        )
+
+inline fun <reified C : Any, reified F : Any, A : Any> createFieldOfWithArgument(
+        name: String,
+        description: String?,
+        argumentClass: KClass<A>,
+        noinline getter: (C, A) -> F
+) =
+        ObjectFieldWithArgument<C, F, A>(
+                C::class,
+                typeRef(),
+                name,
+                description,
+                argumentClass.asArgument(),
                 getter
         )
 

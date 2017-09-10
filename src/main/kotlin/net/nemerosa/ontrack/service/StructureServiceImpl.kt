@@ -10,8 +10,21 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional
 class StructureServiceImpl : StructureService {
+    override fun saveProject(id: Int?, name: String, description: String?, disabled: Boolean?): Project {
+        if (id == null) {
+            // TODO Unique id
+            val project = Project(0, name, description, disabled ?: false)
+            projects[0] = project
+            return project
+        } else {
+            val project = projects[id] ?: throw ProjectNotFoundException(id)
+            // TODO Update
+            projects[id] = project
+            return project
+        }
+    }
 
-    val projects = mapOf(
+    val projects = mutableMapOf(
             1 to Project(1, "ontrack", "Ontrack Core", false)
     )
 

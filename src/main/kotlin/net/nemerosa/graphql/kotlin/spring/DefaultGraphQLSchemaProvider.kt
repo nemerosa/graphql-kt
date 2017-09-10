@@ -2,11 +2,13 @@ package net.nemerosa.graphql.kotlin.spring
 
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import net.nemerosa.graphql.kotlin.core.MutationDef
 import net.nemerosa.graphql.kotlin.core.QueryDef
 import net.nemerosa.graphql.kotlin.core.TypeDef
 
 open class DefaultGraphQLSchemaProvider(
         private val queries: List<QueryDef<*>>,
+        private val mutations: List<MutationDef<*>>,
         private val types: List<TypeDef<*>>
 ) : GraphQLSchemaProvider {
 
@@ -21,7 +23,7 @@ open class DefaultGraphQLSchemaProvider(
     private fun createMutationType(): GraphQLObjectType =
             GraphQLObjectType.newObject()
                     .name("Mutation")
-                    // TODO Mutations
+                    .fields(mutations.map { it.field.binding })
                     .build()
 
     private fun createQueryType(): GraphQLObjectType =

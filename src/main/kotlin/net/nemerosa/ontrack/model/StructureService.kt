@@ -10,4 +10,6 @@ interface StructureService {
 
     fun getBranchesByProject(project: Project): List<Branch>
 
+    fun saveProject(id: Int?, name: String, description: String?, disabled: Boolean?): Project
+
 }

@@ -81,3 +81,21 @@ constructor
         )
 
 }
+
+/**
+ * Saving a project
+ */
+@Component
+class ProjectEdition
+@Autowired
+constructor(
+        private val structureService: StructureService
+) : MutationDef<Project> {
+    override val field: Field<Unit, Project>
+        get() = createFieldOfWithArgument(
+                "saveProject",
+                "Creates or updates a project",
+                ProjectInput::class,
+                { _, a -> structureService.saveProject(a.id, a.name, a.description, a.disabled) }
+        )
+}
