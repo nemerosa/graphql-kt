@@ -14,28 +14,28 @@ class StructureServiceImpl : StructureService {
         if (id == null) {
             // TODO Unique id
             val project = Project(0, name, description, disabled ?: false)
-            projects[0] = project
+            projectTable[0] = project
             return project
         } else {
-            val project = projects[id] ?: throw ProjectNotFoundException(id)
+            val project = projectTable[id] ?: throw ProjectNotFoundException(id)
             // TODO Update
-            projects[id] = project
+            projectTable[id] = project
             return project
         }
     }
 
-    val projects = mutableMapOf(
+    private val projectTable = mutableMapOf(
             1 to Project(1, "ontrack", "Ontrack Core", false)
     )
 
     override fun getProjects(): List<Project> =
-            projects.values.toList().sortedBy { it.name }
+            projectTable.values.toList().sortedBy { it.name }
 
     override fun getProjectByID(id: Int): Project =
-            projects[id] ?: throw ProjectNotFoundException(id)
+            projectTable[id] ?: throw ProjectNotFoundException(id)
 
     override fun findProjectByName(name: String): Project? =
-            projects.values.find { it.name == name }
+            projectTable.values.find { it.name == name }
 
     override fun getBranchesByProject(project: Project): List<Branch> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
