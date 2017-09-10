@@ -26,7 +26,7 @@ class ReflectionArgument<A : Any>(
 private fun <T, R> KProperty1<T, R>.asArgument(): GraphQLArgument {
     val a = GraphQLArgument.newArgument()
     // Annotation
-    val annotation: ArgumentField? = findAnnotation()
+    val annotation: InputField? = findAnnotation()
     // Name = property name
     a.name(name)
     // Description
@@ -43,9 +43,3 @@ private fun <T, R> KProperty1<T, R>.asArgument(): GraphQLArgument {
 }
 
 fun <A : Any> KClass<A>.asArgument() = ReflectionArgument(this)
-
-@Target(AnnotationTarget.PROPERTY)
-@MustBeDocumented
-annotation class ArgumentField(
-        val description: String = ""
-)

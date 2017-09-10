@@ -1,7 +1,13 @@
 package net.nemerosa.ontrack.graphql
 
+import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLInputType
+import graphql.schema.GraphQLNonNull
 import org.junit.Test
+import kotlin.reflect.full.cast
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
 class ArgumentTests {
 
@@ -44,15 +50,54 @@ class ArgumentTests {
         assertEquals("String", b.type.name)
     }
 
-    // TODO Composite type
+    @Test
+    fun `Composite type`() {
+        val argument = Person::class.asArgument()
+        val arguments = argument.bindingArguments
+        assertEquals(2, arguments.size)
+
+        val (address, name) = arguments
+
+        assertEquals("name", name.name)
+        assertNonNullType("String", name.type)
+
+        assertEquals("address", address.name)
+        val addressType = assertNonNullType("Address", address.type)
+
+        assertTrue(addressType is GraphQLInputObjectType)
+        val o = GraphQLInputObjectType::class.cast(addressType)
+        assertEquals(2, o.fields.size)
+        val (city, country) = o.fields
+
+        assertEquals("city", city.name)
+        assertNonNullType("String", city.type)
+
+        assertEquals("country", country.name)
+        assertEquals("String", country.type.name)
+
+    }
+
+    // TODO List
 
 }
 
 data class SimpleArg(val name: String?)
 
 data class SimpleArgWithDescription(
-        @ArgumentField("Name of the argument")
+        @InputField("Name of the argument")
         val name: String?
 )
 
-data class MultipleArgument(val id: Int?, @ArgumentField("Regular expression") val name: String?)
+data class MultipleArgument(val id: Int?, @InputField("Regular expression") val name: String?)
+
+data class Address(val city: String, val country: String?)
+data class Person(val name: String, val address: Address)
+
+fun assertNonNullType(expected: String, type: GraphQLInputType): GraphQLInputType {
+    if (type is GraphQLNonNull) {
+        assertEquals(expected, type.wrappedType.name)
+        return type.wrappedType as GraphQLInputType
+    } else {
+        fail("$type is not a GraphQLNonNull")
+    }
+}
