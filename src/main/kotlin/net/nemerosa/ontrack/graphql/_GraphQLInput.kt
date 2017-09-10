@@ -3,6 +3,7 @@ package net.nemerosa.ontrack.graphql
 import graphql.Scalars
 import graphql.schema.*
 import kotlin.reflect.KClass
+import kotlin.reflect.KParameter
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
@@ -55,10 +56,7 @@ fun <T, R> KProperty1<T, R>.asField(): GraphQLInputObjectField {
     // List?
     if (returnType.jvmErasure.isSubclassOf(List::class)) {
         // @InputList annotation is required because the type of element is erased
-        val listAnnotation = findAnnotation<InputList>() ?: throw IllegalArgumentException(
-                """$name is a list and must be annotated
-                    |with @${InputList::class.simpleName} because
-                    |the type of element is erased at compilation time.""".trimMargin())
+        val listAnnotation = getPropertyInputListAnnotation()
         val elementType = listAnnotation.type.toInputType()
         f.type(GraphQLNonNull(GraphQLList(GraphQLNonNull(elementType))))
     }
@@ -73,6 +71,13 @@ fun <T, R> KProperty1<T, R>.asField(): GraphQLInputObjectField {
     }
     // OK
     return f.build()
+}
+
+private fun <R, T> KProperty1<T, R>.getPropertyInputListAnnotation(): InputList {
+    return findAnnotation<InputList>() ?: throw IllegalArgumentException(
+            """$name is a list and must be annotated
+                    |with @${InputList::class.simpleName} because
+                    |the type of element is erased at compilation time.""".trimMargin())
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -90,19 +95,43 @@ fun <T : Any> KClass<T>.getInputObjectValue(value: Map<String, Any>): T {
     }
     val constructor = primaryConstructor!!
     val inputs: List<Any?> = constructor.parameters.map {
-        val name = it.name!!
-        val type = it.type
-        val actualValue: Any? = value[name]
+        getInputValueForParameter(it, value)
+    }
+    // Call
+    return constructor.call(*inputs.toTypedArray())
+}
+
+private fun <T : Any> KClass<T>.getInputValueForParameter(parameter: KParameter, value: Map<String, Any>): Any? {
+    val name = parameter.name!!
+    val type = parameter.type
+    val actualValue: Any? = value[name]
+    // Gets the corresponding property
+    val property = memberProperties.find { it.name == name }
+            ?: throw IllegalStateException("Could not find $name property in $qualifiedName")
+    // If list property?
+    if (property.returnType.jvmErasure.isSubclassOf(List::class)) {
+        // Gets the (required) annotation
+        val listAnnotation = property.getPropertyInputListAnnotation()
+        // Element type
+        val elementType = listAnnotation.type
+        // Value must be a list
+        if (actualValue is List<*>) {
+            val elements = actualValue.map { inputValue ->
+                elementType.getInputValue(inputValue ?: throw IllegalArgumentException("All elements for $name in $qualifiedName must be non null"))
+            }
+            return elements
+        } else {
+            throw IllegalArgumentException("$name in $qualifiedName must be created from a list")
+        }
+    } else {
         if (actualValue == null) {
             if (type.isMarkedNullable) {
-                null
+                return null
             } else {
                 throw IllegalArgumentException("$name is null but is not marked as nullable")
             }
         } else {
-            type.jvmErasure.getInputValue(actualValue)
+            return type.jvmErasure.getInputValue(actualValue)
         }
     }
-    // Call
-    return constructor.call(*inputs.toTypedArray())
 }
