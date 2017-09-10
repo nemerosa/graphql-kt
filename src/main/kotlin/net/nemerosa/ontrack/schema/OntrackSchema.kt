@@ -3,6 +3,7 @@ package net.nemerosa.ontrack.schema
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import net.nemerosa.ontrack.graphql.RootQueryDef
+import net.nemerosa.ontrack.graphql.TypeDef
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -11,13 +12,16 @@ import org.springframework.context.annotation.Configuration
 class OntrackSchema
 @Autowired
 constructor(
-        private val rootQueries: List<RootQueryDef<*>>
+        private val rootQueries: List<RootQueryDef<*>>,
+        private val types: List<TypeDef<*>>
 ) {
 
     @Bean
     fun schema(): GraphQLSchema = GraphQLSchema.newSchema()
             .query(createQueryType())
-            .build()
+            .build(
+                    types.map { it.type.binding }.toSet()
+            )
 
     private fun createQueryType(): GraphQLObjectType =
             GraphQLObjectType.newObject()

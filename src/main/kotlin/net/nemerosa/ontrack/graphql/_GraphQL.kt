@@ -173,12 +173,25 @@ inline fun <reified C : Any> typeRef(): TypeReference<C> =
  * Type
  */
 class Type<C : Any>(
-        val cls: KClass<C>
+        private val cls: KClass<C>,
+        private val fields: List<Field<C, *>>
 ) : TypeReference<C> {
     /**
      * Type name
      */
     override val typeName: String get() = cls.typeName
+    /**
+     * Binding
+     */
+    val binding: GraphQLObjectType
+        get() =
+            GraphQLObjectType.newObject()
+                    .name(typeName)
+                    // TODO Description?
+                    .fields(
+                            fields.map { it.binding }
+                    )
+                    .build()
 }
 
 /**
@@ -218,7 +231,7 @@ class TypeBuilder<C : Any>(
     }
 
     val type: Type<C>
-        get() = Type(cls)
+        get() = Type(cls, fields.toList())
 
 }
 
