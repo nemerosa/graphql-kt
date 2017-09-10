@@ -6,6 +6,7 @@ import graphql.schema.GraphQLNonNull
 import org.junit.Test
 import kotlin.reflect.full.cast
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -75,6 +76,18 @@ class ArgumentTests {
         assertEquals("country", country.name)
         assertEquals("String", country.type.name)
 
+    }
+
+    @Test
+    fun `Simple input`() {
+        val input = SimpleArg::class.getInputObjectValue(mapOf("name" to "Test"))
+        assertEquals("Test", input.name)
+    }
+
+    @Test
+    fun `Simple input with null`() {
+        val input = SimpleArg::class.getInputObjectValue(mapOf())
+        assertNull(input.name)
     }
 
     // TODO List

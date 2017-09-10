@@ -77,5 +77,5 @@ fun <T : Any> KClass<T>.getInputObjectValue(value: Map<String, Any>): T {
         }
     }
     // Call
-    return constructor.call(inputs.toTypedArray())
+    return constructor.call(*inputs.toTypedArray())
 }
